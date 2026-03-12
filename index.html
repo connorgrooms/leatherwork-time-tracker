@@ -1,0 +1,855 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
+    <title>Leatherwork Time Tracker</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f6f1ea;
+        --bg-sidebar: #f1e7dd;
+        --bg-surface: #ffffff;
+        --border-subtle: #ded4c8;
+        --border-strong: #3b3b43;
+        --text: #26252a;
+        --text-soft: #8a8480;
+        --accent: #254c7d;
+        --timer-pricking: #f7cbc7;
+        --timer-cutting: #f3efb6;
+        --timer-skiving: #d7ecc0;
+        --timer-edge: #c9e7dd;
+        --timer-glue: #d6cff0;
+        --timer-other: #e1e1e1;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+          sans-serif;
+        background: #ffffff;
+        color: var(--text);
+        min-height: 100vh;
+      }
+
+      .app-shell {
+        position: relative;
+        width: 1360px;
+        height: 800px;
+      }
+
+      .main-layout {
+        position: absolute;
+        top: 0px;
+        left: 0;
+        width: 1260px;
+        height: 736px;
+        display: flex;
+      }
+
+      .sidebar {
+        width: 260px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg-sidebar);
+        padding: 16px 14px;
+      }
+
+      .project-card {
+        background: transparent;
+        border-radius: 0;
+        padding: 0;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        min-height: 0;
+      }
+
+      .project-select-label {
+        font-size: 12px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: var(--text-soft);
+        margin-top: 30px;
+      }
+
+      select,
+      input[type="text"],
+      button {
+        font: inherit;
+      }
+
+      .sidebar-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .new-project-group {
+        display: block;
+      }
+
+      .new-project-input {
+        display: none;
+      }
+
+      .new-project-input::placeholder {
+        color: rgba(148, 163, 184, 0.7);
+      }
+
+      .new-project-input:focus-visible {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.8);
+      }
+
+      .project-list {
+        margin-top: 10px;
+        padding: 0;
+        border-radius: 0;
+        background: transparent;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        max-height: 320px;
+        overflow-y: auto;
+      }
+
+      .project-item {
+        border-radius: 2px;
+        border: none;
+        padding: 4px 0;
+        background: transparent;
+        color: #4b4a4f;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 6px;
+        font-size: 0.78rem;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .project-item.active {
+        font-weight: 600;
+        color: #2a2a30;
+      }
+
+      .project-name {
+        flex: 1;
+        min-width: 0;
+        font-size: 18px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        margin-bottom: 10px;
+      }
+
+      .rename-group {
+        display: none;
+      }
+
+      .rename-input {
+        padding: 7px 9px;
+        border-radius: 999px;
+        border: 1px solid rgba(148, 163, 184, 0.6);
+        background: rgba(15, 23, 42, 0.9);
+        color: var(--text);
+        font-size: 0.78rem;
+        min-width: 0;
+      }
+
+      .rename-input::placeholder {
+        color: rgba(148, 163, 184, 0.7);
+      }
+
+      .rename-input:focus-visible {
+        border-color: var(--accent);
+        outline: none;
+        box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.8);
+      }
+
+      .btn {
+        border-radius: 2px;
+        border: 1px solid transparent;
+        padding: 9px 12px;
+        font-size: 0.8rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        font-weight: 600;
+        cursor: pointer;
+        white-space: nowrap;
+        transition:
+          background 120ms ease-out,
+          transform 80ms ease-out,
+          box-shadow 120ms ease-out,
+          border-color 120ms ease-out;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .btn-primary {
+        width: 100%;
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #ffffff;
+        box-shadow: none;
+      }
+
+      .btn-primary:active {
+        transform: translateY(1px) scale(0.98);
+        box-shadow:
+          0 6px 12px rgba(22, 163, 74, 0.45),
+          0 0 0 1px rgba(22, 163, 74, 0.9);
+      }
+
+      .btn-secondary {
+        background: transparent;
+        border-color: transparent;
+        color: var(--text-soft);
+        padding-inline: 0;
+      }
+
+      .btn-secondary:active {
+        transform: translateY(1px) scale(0.98);
+        box-shadow: 0 0 0 1px rgba(148, 163, 184, 0.9);
+      }
+
+      .badge-row {
+        display: flex;
+        justify-content: flex-start;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+      }
+
+      .footnote {
+        font-size: 0.7rem;
+        color: var(--text-soft);
+      }
+
+      .timers-card {
+        background: var(--bg-surface);
+        border-radius: 0;
+        padding: 30px 80px 80px 80px;
+        border: none;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        flex: 1;
+        min-height: 0;
+      }
+
+      .timers-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+
+      .project-title-main {
+        font-size: 1.5rem;
+        font-weight: 500;
+        letter-spacing: 0.02em;
+      }
+
+      .rename-link {
+        margin-left: 12px;
+        font-size: 0.8rem;
+        text-transform: none;
+        letter-spacing: 0;
+        border: none;
+        padding: 0;
+        background: none;
+        color: var(--text-soft);
+      }
+
+      .rename-link:hover {
+        text-decoration: underline;
+      }
+
+      .timers-header-total {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--text-soft);
+      }
+
+      .timers-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+
+      @media (max-width: 640px) {
+        .timers-grid {
+          grid-template-columns: minmax(0, 1fr);
+        }
+      }
+
+      .timer-button {
+        position: relative;
+        border-radius: 0;
+        border: 1px solid rgba(0, 0, 0, 0.06);
+        padding: 18px 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 150px;
+        cursor: pointer;
+        overflow: hidden;
+        box-shadow: none;
+        transition: border-color 120ms ease-out, background 160ms ease-out;
+        -webkit-tap-highlight-color: transparent;
+      }
+
+      .timer-button.active {
+        border-width: 3px;
+        border-color: var(--accent);
+        box-shadow: none;
+      }
+
+      .timer-tag {
+        display: none;
+      }
+
+      .timer-title {
+        font-size: 0.9rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 10px;
+      }
+
+      .timer-time {
+        font-variant-numeric: tabular-nums;
+        font-size: 1.2rem;
+        font-weight: 500;
+        letter-spacing: 0.12em;
+      }
+
+      .timer-sub {
+        display: none;
+      }
+
+      .timer-accent-pricking {
+        background: var(--timer-pricking);
+      }
+
+      .timer-accent-cutting {
+        background: var(--timer-cutting);
+      }
+
+      .timer-accent-skiving {
+        background: var(--timer-skiving);
+      }
+
+      .timer-accent-edge {
+        background: var(--timer-edge);
+      }
+
+      .timer-accent-glue {
+        background: var(--timer-glue);
+      }
+
+      .timer-accent-other {
+        background: var(--timer-other);
+      }
+
+      .total-row {
+        display: none;
+      }
+
+      .total-label {
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.16em;
+        color: var(--text-soft);
+      }
+
+      .total-time {
+        font-variant-numeric: tabular-nums;
+        font-size: 0.9rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+      }
+
+      .total-chip {
+        font-size: 0.65rem;
+        border-radius: 999px;
+        padding: 3px 9px;
+        border: 1px solid rgba(148, 163, 184, 0.8);
+        color: var(--text-soft);
+      }
+
+      .footer span {
+        opacity: 0.8;
+      }
+
+      .footer strong {
+        font-weight: 600;
+      }
+
+      .hidden {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="app-shell" id="app">
+      
+      <div class="main-layout">
+        <aside class="sidebar" aria-label="Projects">
+          <section class="project-card">
+            <div class="sidebar-header">
+              <button id="addProjectBtn" class="btn btn-primary" type="button">
+                New Project
+              </button>
+              <div class="project-select-label">Recent</div>
+            </div>
+
+            <div id="projectList" class="project-list"></div>
+
+            <div class="rename-group">
+              <div class="project-select-label">Rename selected</div>
+              <input
+                id="renameProjectInput"
+                class="rename-input"
+                type="text"
+                maxlength="60"
+                autocomplete="off"
+                placeholder="Type new name and press Enter"
+              />
+            </div>
+
+          </section>
+        </aside>
+
+        <section class="timers-card" aria-label="Task timers">
+          <div class="timers-header">
+            <div class="project-title-main">
+              <span id="projectTitle">Project</span>
+              <button
+                id="renameProjectBtn"
+                type="button"
+                class="btn rename-link"
+              >
+                Rename
+              </button>
+            </div>
+            <div class="timers-header-total">
+              <span class="total-label">Total</span>
+              <span id="totalTime" class="total-time">00:00:00</span>
+            </div>
+          </div>
+
+          <div id="timersGrid" class="timers-grid"></div>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      (function () {
+        const STORAGE_KEY = "leatherwork_time_tracker_v1";
+
+        const TIMER_DEFS = [
+          {
+            key: "pricking_stitching",
+            label: "Pricking / Stitching",
+            accentClass: "timer-accent-pricking",
+          },
+          {
+            key: "cutting",
+            label: "Cutting",
+            accentClass: "timer-accent-cutting",
+          },
+          {
+            key: "skiving",
+            label: "Skiving",
+            accentClass: "timer-accent-skiving",
+          },
+          {
+            key: "edge_finishing",
+            label: "Edge finishing",
+            accentClass: "timer-accent-edge",
+          },
+          {
+            key: "glueing_assembly",
+            label: "Glueing / Assembly",
+            accentClass: "timer-accent-glue",
+          },
+          {
+            key: "other",
+            label: "Other",
+            accentClass: "timer-accent-other",
+          },
+        ];
+
+        const addProjectBtn = document.getElementById("addProjectBtn");
+        const projectList = document.getElementById("projectList");
+        const renameInput = document.getElementById("renameProjectInput");
+        const projectTitleEl = document.getElementById("projectTitle");
+        const renameProjectBtn = document.getElementById("renameProjectBtn");
+        const timersGrid = document.getElementById("timersGrid");
+        const totalTimeEl = document.getElementById("totalTime");
+        const stopAllBtn = document.getElementById("stopAllBtn");
+
+        let state = loadState();
+        ensureInitialProject();
+        buildTimerButtons();
+        renderProjectList();
+        syncRenameInput();
+        updateUI();
+
+        let tickInterval = setInterval(updateUI, 1000);
+
+        addProjectBtn.addEventListener("click", () => {
+          const suggested = suggestProjectName();
+          const entered = window.prompt("New project name", suggested);
+          const name = (entered || "").trim() || suggested;
+          const project = createProject(name);
+          state.activeProjectId = project.id;
+          persistState();
+          renderProjectList();
+          syncRenameInput();
+          updateUI();
+        });
+
+        renameInput.addEventListener("blur", () => {
+          commitRename();
+        });
+
+        renameInput.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            commitRename();
+            renameInput.select();
+          }
+        });
+
+        renameProjectBtn.addEventListener("click", () => {
+          const project = getActiveProject();
+          if (!project) return;
+          const current = project.name || "";
+          const next = window.prompt("Rename project", current);
+          if (next == null) return;
+          const trimmed = next.trim();
+          if (!trimmed || trimmed === project.name) return;
+          project.name = trimmed;
+          persistState();
+          renderProjectList();
+          syncRenameInput();
+          updateUI();
+        });
+
+        stopAllBtn.addEventListener("click", () => {
+          const project = getActiveProject();
+          if (!project) return;
+          let changed = false;
+          const now = Date.now();
+          for (const key of Object.keys(project.timers)) {
+            const timer = project.timers[key];
+            if (timer.running) {
+              timer.elapsedMs += now - timer.startedAt;
+              timer.running = false;
+              timer.startedAt = null;
+              changed = true;
+            }
+          }
+          if (changed) {
+            persistState();
+            updateUI();
+          }
+        });
+
+        function loadState() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            if (!raw) return createEmptyState();
+            const parsed = JSON.parse(raw);
+            if (!parsed || typeof parsed !== "object") return createEmptyState();
+            if (!parsed.projects || typeof parsed.projects !== "object") {
+              parsed.projects = {};
+            }
+            if (!Array.isArray(parsed.projectOrder)) parsed.projectOrder = [];
+            parsed.version = "1";
+            return parsed;
+          } catch (e) {
+            console.warn("Failed to load saved state, resetting.", e);
+            return createEmptyState();
+          }
+        }
+
+        function createEmptyState() {
+          return {
+            version: "1",
+            projects: {},
+            projectOrder: [],
+            activeProjectId: null,
+          };
+        }
+
+        function ensureInitialProject() {
+          if (state.projectOrder.length === 0) {
+            const project = createProject("Project 1");
+            state.activeProjectId = project.id;
+            persistState();
+          } else if (!state.projects[state.activeProjectId]) {
+            state.activeProjectId = state.projectOrder[0] || null;
+            persistState();
+          }
+        }
+
+        function createProject(name) {
+          const id = "p_" + Date.now().toString(36) + Math.random().toString(16).slice(2, 7);
+          const timers = {};
+          TIMER_DEFS.forEach((def) => {
+            timers[def.key] = {
+              key: def.key,
+              elapsedMs: 0,
+              running: false,
+              startedAt: null,
+            };
+          });
+          const project = { id, name, timers };
+          state.projects[id] = project;
+          touchProject(id);
+          return project;
+        }
+
+        function suggestProjectName() {
+          const base = "Project";
+          let i = state.projectOrder.length + 1;
+          while (true) {
+            const name = base + " " + i;
+            const exists = Object.values(state.projects).some(
+              (p) => p.name === name
+            );
+            if (!exists) return name;
+            i++;
+          }
+        }
+
+        function persistState() {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+          } catch (e) {
+            console.warn("Failed to persist state.", e);
+          }
+        }
+
+        function getActiveProject() {
+          if (!state.activeProjectId) return null;
+          return state.projects[state.activeProjectId] || null;
+        }
+
+        function touchProject(id) {
+          const idx = state.projectOrder.indexOf(id);
+          if (idx !== -1) {
+            state.projectOrder.splice(idx, 1);
+          }
+          state.projectOrder.unshift(id);
+        }
+
+        function renderProjectList() {
+          projectList.innerHTML = "";
+          state.projectOrder.forEach((id) => {
+            const project = state.projects[id];
+            if (!project) return;
+            const item = document.createElement("button");
+            item.type = "button";
+            item.className =
+              "project-item" + (id === state.activeProjectId ? " active" : "");
+
+            const nameEl = document.createElement("div");
+            nameEl.className = "project-name";
+            nameEl.textContent = project.name;
+
+            item.appendChild(nameEl);
+
+            item.addEventListener("click", () => {
+              if (!state.projects[id]) return;
+              state.activeProjectId = id;
+              persistState();
+              renderProjectList();
+              syncRenameInput();
+              updateUI();
+            });
+
+            projectList.appendChild(item);
+          });
+        }
+
+        function syncRenameInput() {
+          const project = getActiveProject();
+          if (!project) {
+            renameInput.value = "";
+            renameInput.disabled = true;
+            return;
+          }
+          renameInput.disabled = false;
+          renameInput.value = project.name;
+        }
+
+        function commitRename() {
+          const project = getActiveProject();
+          if (!project) return;
+          const raw = (renameInput.value || "").trim();
+          if (!raw) {
+            renameInput.value = project.name;
+            return;
+          }
+          project.name = raw;
+          persistState();
+          renderProjectList();
+        }
+
+        function buildTimerButtons() {
+          timersGrid.innerHTML = "";
+          TIMER_DEFS.forEach((def) => {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.className =
+              "timer-button " +
+              def.accentClass +
+              " timer-button-" +
+              def.key;
+            button.dataset.timerKey = def.key;
+
+            const title = document.createElement("div");
+            title.className = "timer-title";
+            title.textContent = def.label;
+
+            const time = document.createElement("div");
+            time.className = "timer-time";
+            time.textContent = "00:00:00";
+
+            const sub = document.createElement("div");
+            sub.className = "timer-sub";
+            sub.textContent = "Tap to start";
+
+            const tag = document.createElement("div");
+            tag.className = "timer-tag";
+            tag.textContent = "Idle";
+
+            button.appendChild(title);
+            button.appendChild(time);
+            button.appendChild(sub);
+            button.appendChild(tag);
+
+            button.addEventListener("click", () => handleTimerTap(def.key));
+
+            timersGrid.appendChild(button);
+          });
+        }
+
+        function handleTimerTap(key) {
+          const project = getActiveProject();
+          if (!project) return;
+          const now = Date.now();
+          const tapped = project.timers[key];
+          if (!tapped) return;
+          const wasRunning = !!tapped.running;
+
+          Object.keys(project.timers).forEach((k) => {
+            const timer = project.timers[k];
+            if (!timer.running) return;
+            timer.elapsedMs += now - timer.startedAt;
+            timer.running = false;
+            timer.startedAt = null;
+          });
+
+          if (!wasRunning) {
+            tapped.running = true;
+            tapped.startedAt = now;
+          }
+
+          persistState();
+          renderProjectList();
+          updateUI();
+          syncRenameInput();
+        }
+
+        function formatDuration(ms) {
+          const totalSeconds = Math.floor(ms / 1000);
+          const s = totalSeconds % 60;
+          const m = Math.floor(totalSeconds / 60) % 60;
+          const h = Math.floor(totalSeconds / 3600);
+          const pad = (n) => (n < 10 ? "0" + n : String(n));
+          return pad(h) + ":" + pad(m) + ":" + pad(s);
+        }
+
+        function computeTimerDisplay(timer) {
+          if (!timer) return 0;
+          let ms = timer.elapsedMs || 0;
+          if (timer.running && timer.startedAt) {
+            ms += Date.now() - timer.startedAt;
+          }
+          return ms;
+        }
+
+        function updateUI() {
+          const project = getActiveProject();
+          if (!project) {
+            if (projectTitleEl) projectTitleEl.textContent = "";
+            totalTimeEl.textContent = "00:00:00";
+            return;
+          }
+
+          if (projectTitleEl) {
+            projectTitleEl.textContent = project.name || "Untitled project";
+          }
+
+          let totalMs = 0;
+
+          TIMER_DEFS.forEach((def) => {
+            const button = timersGrid.querySelector(
+              ".timer-button-" + def.key
+            );
+            if (!button) return;
+            const timeEl = button.querySelector(".timer-time");
+            const subEl = button.querySelector(".timer-sub");
+            const tagEl = button.querySelector(".timer-tag");
+            const timer = project.timers[def.key];
+            const ms = computeTimerDisplay(timer);
+            totalMs += ms;
+            timeEl.textContent = formatDuration(ms);
+
+            if (timer && timer.running) {
+              button.classList.add("active");
+              subEl.textContent = "";
+              tagEl.textContent = "";
+            } else if (timer && timer.elapsedMs > 0) {
+              button.classList.remove("active");
+              subEl.textContent = "";
+              tagEl.textContent = "";
+            } else {
+              button.classList.remove("active");
+              subEl.textContent = "";
+              tagEl.textContent = "";
+            }
+          });
+
+          totalTimeEl.textContent = formatDuration(totalMs);
+        }
+      })();
+    </script>
+  </body>
+</html>
+
